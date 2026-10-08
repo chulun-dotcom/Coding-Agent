@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>RepoAgent · 本地任务台</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="任务导航">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">R<span>.</span></div>
+          <div>
+            <strong>RepoAgent</strong>
+            <span>SHI AGENT / LOCAL</span>
+          </div>
+        </div>
+
+        <div class="sidebar-heading">
+          <span>最近任务</span>
+          <span id="task-count" class="count">0</span>
+        </div>
+        <div id="task-list" class="task-list" aria-live="polite"></div>
+
+        <div class="sidebar-footer">
+          <span class="live-dot" aria-hidden="true"></span>
+          本机运行 · 数据仅保存在当前电脑
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb">WORKSPACE <span>/</span> TASK CONSOLE</div>
+          <div class="topbar-links">
+            <span id="connection-state" class="connection-state">正在连接</span>
+            <a href="/docs" target="_blank" rel="noopener">API 文档 ↗</a>
+          </div>
+        </header>
+
+        <div class="page-body">
+          <section class="intro">
+            <div class="intro-copy">
+              <p class="eyebrow"><span class="eyebrow-line"></span> LOCAL CODING AGENT</p>
+              <h1>给仓库一个任务，<br /><em>看它如何完成。</em></h1>
+              <p class="intro-description">
+                从代码搜索、修改到容器测试与独立验收，每一步都留下可查看的记录。
+                源仓库不会被直接修改。
+              </p>
+            </div>
+            <div class="flow-card" aria-label="任务流程">
+              <div><span>01</span><strong>定位代码</strong><small>搜索与读取</small></div>
+              <div><span>02</span><strong>修改验证</strong><small>补丁与测试</small></div>
+              <div><span>03</span><strong>交付结果</strong><small>Diff 与报告</small></div>
+            </div>
+          </section>
+
+          <section class="form-card" aria-labelledby="create-heading">
+            <div class="section-title">
+              <div>
+                <p class="section-kicker">NEW TASK</p>
+                <h2 id="create-heading">创建任务</h2>
+              </div>
+              <div class="section-actions">
+                <span class="section-note">需要干净的本地 Git 仓库</span>
+                <button id="toggle-form" class="text-button" type="button" aria-expanded="false" hidden>展开表单 ↓</button>
+              </div>
+            </div>
+            <form id="task-form">
+              <div class="form-row">
+                <label class="field field-repo">
+                  <span>仓库绝对路径</span>
+                  <input id="repo-input" name="repo" type="text" autocomplete="off"
+                    placeholder="例如 C:\Projects\my-repo" required />
+                </label>
+                <label class="field field-profile">
+                  <span>项目类型</span>
+                  <select id="profile-input" name="profile">
+                    <option value="python">Python · pytest</option>
+                    <option value="java">Java · Maven</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                <span>任务描述</span>
+                <textarea id="instruction-input" name="task" rows="3" required
+                  placeholder="例如：修复分页函数在 page 小于 1 时的边界问题，并补充测试。"></textarea>
+              </label>
+              <details class="advanced">
+                <summary>更多设置 <span>⌄</span></summary>
+                <div class="form-row advanced-fields">
+                  <label class="field">
+                    <span>最多执行步数</span>
+                    <input id="steps-input" name="max_steps" type="number" min="1" max="500" value="25" />
+                  </label>
+                  <label class="field">
+                    <span>基准提交</span>
+                    <input id="commit-input" name="base_commit" type="text" value="HEAD" />
+                  </label>
+                  <label class="field">
+                    <span>独立验收目录（可选）</span>
+                    <input id="acceptance-input" name="acceptance" type="text"
+                      placeholder="仓库外的 pytest 目录" />
+                  </label>
+                </div>
+              </details>
+              <div class="form-footer">
+                <p>Agent 在独立副本中工作；模型密钥不会发送到浏览器。</p>
+                <button id="submit-button" class="primary-button" type="submit">
+                  <span>开始执行</span><span aria-hidden="true">↗</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section id="empty-state" class="empty-state" aria-label="暂无选中任务">
+            <div class="empty-symbol" aria-hidden="true"><span>{</span><i>→</i><span>}</span></div>
+            <h2>任务执行过程，会在这里展开</h2>
+            <p>创建一个任务，或从左侧选择已有任务查看记录。</p>
+          </section>
+
+          <section id="task-view" class="task-view" hidden aria-labelledby="task-heading">
+            <div class="task-header">
+              <div>
+                <p class="section-kicker">CURRENT TASK <span id="task-id-label"></span></p>
+                <h2 id="task-heading">任务详情</h2>
+                <p id="task-repo" class="task-repo"></p>
+              </div>
+              <div class="task-actions">
+                <span id="status-badge" class="status-badge">等待中</span>
+                <button id="cancel-button" class="secondary-button" type="button" hidden>取消任务</button>
+                <button id="resume-button" class="secondary-button" type="button" hidden>恢复任务</button>
+              </div>
+            </div>
+
+            <div class="metric-grid">
+              <div class="metric"><span>执行状态</span><strong id="metric-status">—</strong></div>
+              <div class="metric"><span>Agent 步数</span><strong id="metric-steps">—</strong></div>
+              <div class="metric"><span>输入 Token</span><strong id="metric-input">—</strong></div>
+              <div class="metric"><span>输出 Token</span><strong id="metric-output">—</strong></div>
+            </div>
+
+            <div class="detail-grid">
+              <article class="panel timeline-panel">
+                <div class="panel-heading">
+                  <div><p class="section-kicker">EXECUTION TRACE</p><h3>执行记录</h3></div>
+                  <span id="event-count" class="panel-count">0 条记录</span>
+                </div>
+                <div id="timeline" class="timeline" aria-live="polite"></div>
+              </article>
+
+              <article class="panel result-panel">
+                <div class="panel-heading">
+                  <div><p class="section-kicker">RESULT & ARTIFACTS</p><h3>任务结果</h3></div>
+                  <a id="download-patch" class="download-link" href="#" download hidden>下载补丁 ↓</a>
+                </div>
+                <div class="tabs" role="tablist" aria-label="结果内容">
+                  <button class="tab active" type="button" data-tab="summary" role="tab" aria-selected="true">概览</button>
+                  <button class="tab" type="button" data-tab="diff" role="tab" aria-selected="false">Diff</button>
+                  <button class="tab" type="button" data-tab="report" role="tab" aria-selected="false">报告 JSON</button>
+                </div>
+                <div id="result-content" class="result-content"></div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div id="toast" class="toast" role="alert" hidden></div>
+  </body>
+</html>

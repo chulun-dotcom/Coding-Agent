@@ -11,14 +11,17 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .model import ChatCompletionsModel
 from .service import PROFILES, TaskService
 
 DATA_ROOT = Path(os.getenv("SHI_AGENT_DATA", "data"))
+WEB_ROOT = Path(__file__).resolve().parent / "web"
 service = TaskService(DATA_ROOT)
 app = FastAPI(title="SHI Agent", version="0.1.0")
+app.mount("/static", StaticFiles(directory=WEB_ROOT), name="static")
 
 
 class CreateTask(BaseModel):
@@ -28,6 +31,11 @@ class CreateTask(BaseModel):
     max_steps: int = Field(default=40, ge=1, le=500)
     base_commit: str = "HEAD"
     acceptance: Path | None = None
+
+
+@app.get("/", include_in_schema=False)
+def dashboard() -> FileResponse:
+    return FileResponse(WEB_ROOT / "index.html", media_type="text/html")
 
 
 @app.get("/health")

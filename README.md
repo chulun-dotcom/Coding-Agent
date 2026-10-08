@@ -29,7 +29,7 @@ python -m uv run python scripts/run_tests.py
 python -m uv run python scripts/demo.py
 ```
 
-`demo.py` 不需要模型密钥。它临时创建示例 Git 仓库，走完读取、补丁、容器测试、最终验证和导出。产物在 `data/tasks/<task_id>/artifacts/`，包括 `report.json`、`summary.md` 和 `patch.diff`。当前版本已通过 44 项测试，包含 Docker 集成测试。
+`demo.py` 不需要模型密钥。它临时创建示例 Git 仓库，走完读取、补丁、容器测试、最终验证和导出。产物在 `data/tasks/<task_id>/artifacts/`，包括 `report.json`、`summary.md` 和 `patch.diff`。当前版本已通过 46 项测试，包含 Docker 集成测试。
 
 ## 运行真实任务
 
@@ -71,12 +71,12 @@ python -m uv run ruff format --check src tests scripts examples
 python -m uv run ruff check src tests scripts examples
 ```
 
-本机 API：
+本地页面与 API：
 
 ```powershell
 python -m uv run shi-agent serve --host 127.0.0.1 --port 8000
 ```
 
-可访问 `/docs`。主要接口：`POST /tasks`、`GET /tasks`、`GET /tasks/{id}`、`POST /tasks/{id}/cancel`、`POST /tasks/{id}/resume`、`GET /tasks/{id}/events`、`GET /tasks/{id}/artifacts`、`GET /tasks/{id}/artifacts/{name}`。事件流支持 `Last-Event-ID` 续接。服务仅设计用于可信开发者的本机环境；不要直接暴露到公网。
+打开 `http://127.0.0.1:8000/` 可使用单页任务台：提交仓库任务、查看实时步骤、测试结果、Diff 与完整报告。`/docs` 提供 API 文档。主要接口：`POST /tasks`、`GET /tasks`、`GET /tasks/{id}`、`POST /tasks/{id}/cancel`、`POST /tasks/{id}/resume`、`GET /tasks/{id}/events`、`GET /tasks/{id}/artifacts`、`GET /tasks/{id}/artifacts/{name}`。事件流支持 `Last-Event-ID` 续接。页面不接收模型密钥；服务仅设计用于可信开发者的本机环境，不要直接暴露到公网。
 
 设计与验收标准见 [项目设计文档](docs/项目设计文档.md)。

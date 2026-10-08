@@ -27,6 +27,18 @@ class ContextAndApiTest(unittest.TestCase):
         self.assertEqual(200, client.get("/health").status_code)
         self.assertEqual(404, client.get("/tasks/does-not-exist").status_code)
 
+    def test_local_dashboard_and_assets_are_served(self) -> None:
+        client = TestClient(app)
+        page = client.get("/")
+        script = client.get("/static/app.js")
+        style = client.get("/static/style.css")
+
+        self.assertEqual(200, page.status_code)
+        self.assertIn("创建任务", page.text)
+        self.assertEqual(200, script.status_code)
+        self.assertIn("EventSource", script.text)
+        self.assertEqual(200, style.status_code)
+
     def test_context_keeps_task_under_size_limit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
