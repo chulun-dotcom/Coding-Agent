@@ -7,6 +7,7 @@ code on the host.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -60,7 +61,7 @@ class DockerSandbox:
         memory: str = "1g",
         cpus: str = "1.0",
         pids_limit: int = 256,
-        user: str = "65532:65532",
+        user: str | None = None,
         read_only_mounts: dict[Path, str] | None = None,
         cancelled: Callable[[], bool] | None = None,
     ) -> None:
@@ -68,6 +69,12 @@ class DockerSandbox:
         self.memory = memory
         self.cpus = cpus
         self.pids_limit = pids_limit
+        if user is None:
+            # Linux bind mounts keep host ownership. Match the caller so tests can write.
+            if hasattr(os, "getuid") and os.getuid() != 0:
+                user = f"{os.getuid()}:{os.getgid()}"
+            else:
+                user = "65532:65532"
         self.user = user
         self.read_only_mounts = read_only_mounts or {}
         self.cancelled = cancelled

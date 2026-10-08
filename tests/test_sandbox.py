@@ -10,6 +10,15 @@ from repoagent.sandbox import DockerSandbox
 
 
 class DockerSandboxTest(unittest.TestCase):
+    def test_linux_uses_host_user_for_writable_workspace(self) -> None:
+        with (
+            patch("repoagent.sandbox.os.getuid", return_value=1001, create=True),
+            patch("repoagent.sandbox.os.getgid", return_value=1002, create=True),
+        ):
+            sandbox = DockerSandbox()
+
+        self.assertEqual("1001:1002", sandbox.user)
+
     def test_command_has_required_isolation_options(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             sandbox = DockerSandbox(image="shi-agent-python:test")
@@ -20,7 +29,8 @@ class DockerSandboxTest(unittest.TestCase):
         self.assertIn("--read-only", command)
         self.assertIn("ALL", command)
         self.assertIn("no-new-privileges", command)
-        self.assertIn("65532:65532", command)
+        container_user = command[command.index("--user") + 1]
+        self.assertNotEqual("0:0", container_user)
         self.assertIn("shi-agent-python:test", command)
         self.assertEqual(["python", "-m", "unittest"], command[-3:])
 
